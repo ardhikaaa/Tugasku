@@ -1,10 +1,11 @@
-import { View, Text, TextInput, TouchableOpacity, FlatList, ScrollView, Image } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, FlatList, ScrollView, Image, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import tw from 'twrnc'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { FontAwesome, FontAwesome5, Fontisto, MaterialCommunityIcons } from '@expo/vector-icons'
+import { AntDesign, Entypo, FontAwesome, FontAwesome5, Fontisto, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { Picker } from '@react-native-picker/picker';
+import { green } from 'react-native-reanimated/lib/typescript/Colors'
 
 const index = () => {
   const [task, setTask] = useState('');
@@ -17,7 +18,15 @@ const index = () => {
 
 
   const addTask = () => {
-    if(task.trim() === '') return;
+    if(task.trim() === '') {
+      Alert.alert('Duh', 'Belom Kamu Isi');
+      return;
+    }
+
+    if(task.trim().length < 3){
+      Alert.alert('Huh', 'Yang bener kamu inputnya');
+      return;
+    }
 
     const newTask = {
       id: Date.now().toString(),
@@ -65,14 +74,25 @@ const index = () => {
   }, [list]);
 
   const deleteTask = (id: string) => {
-    const filtered = list.filter(item => item.id !== id);
-    setList(filtered);
+    Alert.alert(
+      'Yakin Mau Hapus?',
+      'Tugas ini akan dihapus secara permanen.',
+      [
+        { text: 'Batal', style: 'cancel' },
+        { text: 'Hapus', onPress: () => {
+          const filtered = list.filter(item => item.id !== id);
+          setList(filtered);
+        }, style: 'destructive' },
+      ],
+      { cancelable: true }
+    );
   };
+  
 
   const handleEdit =() => {
     const updated = list.map(item =>
       item.id === editId
-      ? {...item, title: title.trim(), desc: task.trim(), deadline: deadline.trim()}
+      ? {...item, title: title.trim(), desc: task.trim(), deadline: deadline.trim(), category: category}
       :item
     );
     setList(updated);
@@ -104,7 +124,7 @@ const index = () => {
     <View style={tw`mx-3 my-5`}>
         <Text style={tw`text-2xl font-semibold mb-3`}>📚 Task</Text>
 
-      <View style={tw`gap-2 mb-5`}>
+      <View style={tw`gap-2 mb-2`}>
         <TextInput
             style={tw`border border-neutral-400 rounded-lg w-full`}
             placeholder='Add Title'
@@ -126,24 +146,33 @@ const index = () => {
             onChangeText={setDeadline}
           />
 
-        <View style={tw`border border-neutral-400 rounded-lg w-full mb-2`}>
-          <Picker
-            selectedValue={category}
-            onValueChange={(itemValue) => setCategory(itemValue)}
-            style={tw`w-full`}
-          >
-            <Picker.Item label="Choose Category" style={tw`text-neutral-500`} value="" />
-            <Picker.Item label="Homework" value="PR" />
-            <Picker.Item label="Project" value="Proyek" />
-            <Picker.Item label="Exam" value="Ujian" />
-          </Picker>
-        </View>
+          <View style={tw`border border-neutral-400 rounded-lg w-full mb-2`}>
+            <Picker
+              selectedValue={category}
+              onValueChange={(itemValue) => setCategory(itemValue)}
+              style={tw`w-full`}
+            >
+              <Picker.Item label="Choose Category" style={tw`text-neutral-500`} value="" />
+              <Picker.Item label="Homework" value="PR" />
+              <Picker.Item label="Project" value="Proyek" />
+              <Picker.Item label="Exam" value="Ujian" />
+            </Picker>
+          </View>
+
 
         <TouchableOpacity 
-        style={tw`bg-blue-400  p-3 rounded-lg w-full items-center`}
+        style={tw`bg-[#032A4E]  p-3 rounded-lg w-full items-center`}
         onPress={isEditing ? handleEdit : addTask}>
           <Text style={tw`text-white text-lg`}>{isEditing ? 'Simpan' : 'Tambah'}</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={tw`my-4`}>
+        {list.length === 0 ? (
+          <Text style={tw`text-center text-neutral-400 text-lg italic font-semibold`}>YEAY GADA TUGAS KAMU</Text>
+        ) : (
+          <Text style={tw`text-neutral-600 text-lg font-semibold`}>ADA TUGAS NI KAMU!</Text>
+        )}
       </View>
 
       <FlatList 
@@ -151,51 +180,51 @@ const index = () => {
         keyExtractor={item => item.id}
         scrollEnabled={false}
         renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() => toggleCheck(item.id)}
-          style={tw.style(
-            'flex-row justify-between border-2 w-full my-2 p-2 rounded-xl',
-            item.checked ? 'bg-gray-300 border-gray-500' : 'bg-white border-neutral-400'
-          )}
-        >
-      <View>
-        <Text style={tw.style('text-lg', item.checked && 'line-through text-gray-500')}>
-          📖 {item.title}
-        </Text>
-        <Text style={tw.style('text-lg', item.checked && 'line-through text-gray-500')}>
-          📋 {item.desc}
-        </Text>
-        <Text style={tw.style('text-lg', item.checked && 'line-through text-gray-500')}>
-          ⏳ {item.deadline}
-        </Text>
-        <Text  style={tw.style('text-lg', item.checked && 'line-through text-gray-500')}>
-          📌 {item.category}</Text>
+      <View style={tw`border border-neutral-500 rounded-xl p-1 flex-row justify-between my-1`}>
+        <View style={tw`flex-row gap-2`}>
+          <View style={tw`justify-center`}>
+          <TouchableOpacity onPress={() => toggleCheck(item.id)}>
+            {item.checked ? (
+              <FontAwesome name='check-square' size={28} color={'green'} />
+            ) : (
+              <FontAwesome name='square-o' size={30} color={'gray'} />
+            )}
+          </TouchableOpacity>
+          </View>
+          <View>
+            <Text style={tw`text-xl font-bold ${item.checked ? 'line-through text-gray-400' : ''}`}>
+              📖 {item.title}
+            </Text>
+            <Text style={tw`text-lg font-small ${item.checked ? 'line-through text-gray-400' : ''}`}>
+              📋 {item.desc}
+            </Text>
+            <Text style={tw`text-lg text-red-500 font-bold ${item.checked ? 'line-through text-gray-400' : ''}`}>
+              ⏳ {item.deadline}
+            </Text>
+            <Text  style={tw`text-lg text-grey-500 ${item.checked ? 'line-through text-gray-400' : ''}`}>
+              📌 {item.category}</Text>
+          </View>
+        </View>
 
-        <View style={tw`flex-row gap-2 items-center`}>
+        <View style={tw`flex-row gap-1 items-center`}>
         <TouchableOpacity 
           onPress={() => {
             if (!item.checked) {
               startEdit(item);
-            } else {
+            }
+            else {
               alert("Tugas ini sudah selesai dan tidak bisa diedit.");
             }
           }}
         >
-          <Text style={[tw`text-blue-500 text-[5] font-semibold`, item.checked && tw`text-gray-400`]}>Edit</Text>
+          <MaterialIcons name='edit-square' size={30} style={[tw`text-[#032A4E]`, item.checked && tw`text-gray-400`]}/>
         </TouchableOpacity>
 
           <TouchableOpacity onPress={() => deleteTask(item.id)}>
-            <Text style={tw`text-red-500 text-[5] font-semibold`}>Delete</Text>
+            <Entypo name='squared-cross' size={30} color={'red'}/>
           </TouchableOpacity>
         </View>
       </View>
-
-        <Image source={
-          item.checked
-            ? require('@/assets/images/checked.png')
-            : require('@/assets/images/book.png')} 
-        style={tw`w-25 h-25`} />
-      </TouchableOpacity>
       )}
     />
     </View>
